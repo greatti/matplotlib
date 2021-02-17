@@ -144,6 +144,115 @@ df = pd.DataFrame({'normal' : normal_sample,
 print(df.describe())
 
 plt.figure()
-_ = plt.boxplot(df['normal'], whis = 'range')
+_ = plt.boxplot(df['normal'], whis = 'range') #E isso vai te dar um boxplot basico
+
+#Vamos agora plotar todos os boxplots
+
+plt.clf()
+_ = plt.boxplot([df['normal'], df['random'], df['gamma'] ], whis = 'range')
+#Vemos que dos 3 plots o df['gamma'] é o que possui um maior braço, mas porque?
+#Vamos dar uma olhada no histograma
+
+plt.figure()
+_ = plt.hist(df['gamma'], bins = 100)
+#Por isso! gamma é uma distribuição que possui maior concentração em valores "maiores"
+
+#Vamos adicionar esse histograma ao boxplot?
+import mpl_toolkits.axes_grid1.inset_locator as mpl_il
+
+plt.figure()
+plt.boxplot([df['normal'], df['random'], df['gamma'] ], whis = 'range')
+
+ax2 = mpl_il.inset_axes(plt.gca(), width = '60%', height = '40%', loc = 2)
+ax2.hist(df['gamma'], bins = 100)
+ax2.margins(x=0.5)
+ax2.yaxis.tick_right()
+
+#Se nao dermos informações obre o parametro 'whis' o que acontece?
+plt.figure()
+_ = plt.boxplot([df['normal'], df['random'], df['gamma']])
+#E isso pode ser um metodo para detectar OUTLINERS, por exemplo
+#Ainda podemos adicionar um intervalo de confiança, temos que olhar os documentos
+
+############### HEATMAPS ###############
+
+#É um tipo de grafico muito bem utilizado quando queremos representar a "cocentração"
+#ou "intensidade" através de cores 
+
+plt.figure()
+
+Y = np.random.normal(loc=0.0, scale=1.0, size=10000)
+X = np.random.random(size=10000)
+_ = plt.hist2d(X, Y, bins=25) #e a qualidade do histograma aumenta conforme aumenta bins
 
 
+plt.figure()
+_ = plt.hist2d(X, Y, bins=300)
+
+#Vamos adicionar uma legenda
+plt.colorbar()  
+
+############### ANIMATION ###############
+
+import matplotlib.animation as animation
+
+n = 100
+x = np.random.randn(n)
+
+#A gente vai tentar fazer a contrução animada de um histograma indo de n = 10 para n = 100
+
+def update(curr):
+    # check if animation is at the last frame, and if so, stop the animation a
+    if curr == n: 
+        a.event_source.stop() #Quando n alcançar 100 a função é interrompida
+    plt.cla()
+    bins = np.arange(-4, 4, 0.5) #Estamos organizando um bins variável por um passo
+    plt.hist(x[:curr], bins=bins)
+    plt.axis([-4,4,0,30]) 
+    plt.gca().set_title('Sampling the Normal Distribution')
+    plt.gca().set_ylabel('Frequency')
+    plt.gca().set_xlabel('Value')
+    plt.annotate('n = {}'.format(curr), [3,27]) #estamos adicionando um "subtitulo"
+    
+fig = plt.figure()
+a = animation.FuncAnimation(fig, update, interval=100) #interval está em ms
+
+############# INTERACTIVITY ##############
+
+plt.figure()
+data = np.random.rand(10)
+plt.plot(data)
+
+def onclick(event):
+    plt.cla()
+    plt.plot(data)
+    plt.gca().set_title('Event at pixels {},{} \nand data {},{}'.format(event.x, event.y, event.xdata, event.ydata))
+
+# tell mpl_connect we want to pass a 'button_press_event' into onclick when the event is detected
+plt.gcf().canvas.mpl_connect('button_press_event', onclick)
+
+#Quando clicamos no plot o titulo indica onde o mouse está
+
+#Vamos criar um plot que selecione o dado quando clicamos em cima
+from random import shuffle
+origins = ['China', 'Brazil', 'India', 'USA', 'Canada', 'UK', 'Germany', 'Iraq', 'Chile', 'Mexico']
+
+shuffle(origins)
+
+df = pd.DataFrame({'height': np.random.rand(10),
+                       'weight': np.random.rand(10),
+                       'origin': origins})
+#print(df)
+
+plt.figure()
+# picker=5 means the mouse doesn't have to click directly on an event, but can be up to 5 pixels away
+plt.scatter(df['height'], df['weight'], picker=5)
+plt.gca().set_ylabel('Weight')
+plt.gca().set_xlabel('Height')
+
+def onpick(event):
+    origin = df.iloc[event.ind[0]]['origin']
+    plt.gca().set_title('Selected item came from {}'.format(origin))
+
+# tell mpl_connect we want to pass a 'pick_event' into onpick when the event is detected
+plt.gcf().canvas.mpl_connect('pick_event', onpick)
